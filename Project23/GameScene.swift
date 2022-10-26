@@ -31,16 +31,31 @@ class GameScene: SKScene {
     var activeSliceBG: SKShapeNode!
     var activeSliceFG: SKShapeNode!
     var activeSlicePoints = [CGPoint]()
+    
     var activeEnemies = [SKSpriteNode]()
+    
+    let horitontalPositionRange: ClosedRange<Int> = (64...960)
+    let startingHeight = -128
+    let spinVelocity: ClosedRange<CGFloat> = (-3...3)
+    let horizontalLeftEdgePerimeter: CGFloat = 256
+    let horizontalLeftPerimeter: CGFloat = 512
+    let horizontalRightPerimeter: CGFloat = 768
+    let fasterLateralAcceleration: ClosedRange<Int> = (8...15)
+    let slowerLateralAcceleration: ClosedRange<Int> = (3...5)
+    let liftOffSpeed: ClosedRange<Int> = (24...32)
+    let fullCircle: CGFloat = 64
+    let velocityMultiplier = 40
     
     var isSwooshSoundActive = false
     var bombSoundEffect: AVAudioPlayer?
     
     var popupTime = 0.9
+    
     var sequence = [SequenceType]()
     var sequencePosition = 0
     var chainDelay = 3.0
     var nextSequenceQueued = true
+    
     var isGameEnded = false
     
     override func didMove(to view: SKView) {
@@ -343,30 +358,30 @@ class GameScene: SKScene {
             enemy.name = "enemy"
         }
         // 1
-        let randomPosition = CGPoint(x: Int.random(in: 64...960), y: -128)
+        let randomPosition = CGPoint(x: Int.random(in: horitontalPositionRange), y: startingHeight)
         enemy.position = randomPosition
         
         // 2
-        let randomAngularVelocity = CGFloat.random(in: -3...3)
+        let randomAngularVelocity = CGFloat.random(in: spinVelocity)
         let randomXVelocity: Int
         
         // 3
-        if randomPosition.x < 256 {
-            randomXVelocity = Int.random(in: 8...15)
-        } else if randomPosition.x < 512 {
-            randomXVelocity = Int.random(in: 3...5)
-        } else if randomPosition.x < 768 {
-            randomXVelocity = -Int.random(in: 3...5)
+        if randomPosition.x < horizontalLeftEdgePerimeter {
+            randomXVelocity = Int.random(in: fasterLateralAcceleration)
+        } else if randomPosition.x < horizontalLeftPerimeter {
+            randomXVelocity = Int.random(in: slowerLateralAcceleration)
+        } else if randomPosition.x < horizontalRightPerimeter {
+            randomXVelocity = -Int.random(in: slowerLateralAcceleration)
         } else {
-            randomXVelocity = -Int.random(in: 8...15)
+            randomXVelocity = -Int.random(in: fasterLateralAcceleration)
         }
         
         // 4
-        let randomYVelocity = Int.random(in: 24...32)
+        let randomYVelocity = Int.random(in: liftOffSpeed)
         
         // 5
-        enemy.physicsBody = SKPhysicsBody(circleOfRadius: 64)
-        enemy.physicsBody?.velocity = CGVector(dx: randomXVelocity * 40, dy: randomYVelocity * 40)
+        enemy.physicsBody = SKPhysicsBody(circleOfRadius: fullCircle)
+        enemy.physicsBody?.velocity = CGVector(dx: randomXVelocity * velocityMultiplier, dy: randomYVelocity * velocityMultiplier)
         enemy.physicsBody?.angularVelocity = randomAngularVelocity
         enemy.physicsBody?.collisionBitMask = 0
         
