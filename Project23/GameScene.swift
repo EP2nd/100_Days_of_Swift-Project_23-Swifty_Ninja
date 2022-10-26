@@ -9,6 +9,19 @@ import SpriteKit
 import GameplayKit
 import AVFoundation
 
+// Challenge 2:
+extension SKNode {
+    func addGlow(radius: CGFloat = 30) {
+        let view = SKView()
+        let effectNode = SKEffectNode()
+        let texture = view.texture(from: self)
+        effectNode.shouldRasterize = true
+        effectNode.filter = CIFilter(name: "CIGaussianBlur", parameters: ["inputRadius": radius])
+        addChild(effectNode)
+        effectNode.addChild(SKSpriteNode(texture: texture))
+    }
+}
+
 enum ForceBomb {
     case never, always, random
 }
@@ -34,6 +47,7 @@ class GameScene: SKScene {
     
     var activeEnemies = [SKSpriteNode]()
     
+    // Challenge 1:
     let horitontalPositionRange: ClosedRange<Int> = (64...960)
     let startingHeight = -128
     let spinVelocity: ClosedRange<CGFloat> = (-3...3)
@@ -43,6 +57,8 @@ class GameScene: SKScene {
     let fasterLateralAcceleration: ClosedRange<Int> = (8...15)
     let slowerLateralAcceleration: ClosedRange<Int> = (3...5)
     let liftOffSpeed: ClosedRange<Int> = (24...32)
+    // Challenge 2:
+    let highestLiftOffSpeed: ClosedRange<Int> = (32...36)
     let fullCircle: CGFloat = 64
     let velocityMultiplier = 40
     
@@ -125,11 +141,20 @@ class GameScene: SKScene {
         let nodesAtPoint = nodes(at: location)
         
         for case let node as SKSpriteNode in nodesAtPoint {
-            if node.name == "enemy" {
+            // Challenge 2:
+            if node.name == "enemy" || node.name == "glowing penguin" {
                 // 1
                 if let emitter = SKEmitterNode(fileNamed: "sliceHitEnemy") {
                     emitter.position = node.position
                     addChild(emitter)
+                }
+                
+                // 6
+                if node.name == "enemy" {
+                    score += 1
+                // Challenge 2:
+                } else if node.name == "glowing penguin" {
+                    score += 5
                 }
                 
                 // 2
@@ -146,9 +171,6 @@ class GameScene: SKScene {
                 // 5
                 let seq = SKAction.sequence([group, .removeFromParent()])
                 node.run(seq)
-                
-                // 6
-                score += 1
                 
                 // 7
                 if let index = activeEnemies.firstIndex(of: node) {
@@ -195,8 +217,8 @@ class GameScene: SKScene {
             for (index, node) in activeEnemies.enumerated().reversed() {
                 if node.position.y < -140 {
                     node.removeFromParent()
-                    
-                    if node.name == "enemy" {
+                    // Challenge 2:
+                    if node.name == "enemy" || node.name == "glowing penguin" {
                         node.name = ""
                         subtractLife()
                         
@@ -319,6 +341,9 @@ class GameScene: SKScene {
             enemyType = 1
         } else if forceBomb == .always {
             enemyType = 0
+            // Challenge 2:
+        } else if forceBomb == .random {
+            enemyType = 2
         }
         
         if enemyType == 0 {
@@ -352,11 +377,19 @@ class GameScene: SKScene {
                 enemy.addChild(emitter)
             }
             
+        // Challenge 2:
+        } else if enemyType == 2 {
+            enemy = SKSpriteNode(imageNamed: "penguin")
+            enemy.addGlow()
+            run(SKAction.playSoundFileNamed("launch.caf", waitForCompletion: false))
+            enemy.name = "glowing penguin"
+            
         } else {
             enemy = SKSpriteNode(imageNamed: "penguin")
             run(SKAction.playSoundFileNamed("launch.caf", waitForCompletion: false))
             enemy.name = "enemy"
         }
+        // Challenge 1:
         // 1
         let randomPosition = CGPoint(x: Int.random(in: horitontalPositionRange), y: startingHeight)
         enemy.position = randomPosition
@@ -377,7 +410,12 @@ class GameScene: SKScene {
         }
         
         // 4
-        let randomYVelocity = Int.random(in: liftOffSpeed)
+        // Challenge 2:
+        var randomYVelocity = Int.random(in: liftOffSpeed)
+        
+        if enemy.name == "glowing penguin" {
+            randomYVelocity = Int.random(in: highestLiftOffSpeed)
+        }
         
         // 5
         enemy.physicsBody = SKPhysicsBody(circleOfRadius: fullCircle)
@@ -417,19 +455,19 @@ class GameScene: SKScene {
             
         case .three:
             createEnemy()
-            createEnemy()
+            createEnemy(forceBomb: .random)
             createEnemy()
             
         case .four:
+            createEnemy(forceBomb: .random)
             createEnemy()
-            createEnemy()
-            createEnemy()
+            createEnemy(forceBomb: .random)
             createEnemy()
             
         case .chain:
             createEnemy()
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 5.0)) { [weak self] in self?.createEnemy() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 5.0)) { [weak self] in self?.createEnemy(forceBomb: .random) }
             DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 5.0 * 2)) { [weak self] in self?.createEnemy() }
             DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 5.0 * 3)) { [weak self] in self?.createEnemy() }
             DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 5.0 * 4)) { [weak self] in self?.createEnemy() }
@@ -439,7 +477,7 @@ class GameScene: SKScene {
             
             DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 10.0)) { [weak self] in self?.createEnemy() }
             DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 10.0 * 2)) { [weak self] in self?.createEnemy() }
-            DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 10.0 * 3)) { [weak self] in self?.createEnemy() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 10.0 * 3)) { [weak self] in self?.createEnemy(forceBomb: .random) }
             DispatchQueue.main.asyncAfter(deadline: .now() + (chainDelay / 10.0 * 4)) { [weak self] in self?.createEnemy() }
         }
         sequencePosition += 1
