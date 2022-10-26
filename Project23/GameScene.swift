@@ -59,6 +59,7 @@ class GameScene: SKScene {
     let liftOffSpeed: ClosedRange<Int> = (24...32)
     // Challenge 2:
     let highestLiftOffSpeed: ClosedRange<Int> = (32...36)
+    // Challenge 1:
     let fullCircle: CGFloat = 64
     let velocityMultiplier = 40
     
@@ -73,6 +74,8 @@ class GameScene: SKScene {
     var nextSequenceQueued = true
     
     var isGameEnded = false
+    // Challenge 3:
+    var gameOverLabel: SKLabelNode!
     
     override func didMove(to view: SKView) {
         let background = SKSpriteNode(imageNamed: "sliceBackground")
@@ -523,5 +526,15 @@ class GameScene: SKScene {
             livesImages[1].texture = SKTexture(imageNamed: "sliceLifeGone")
             livesImages[2].texture = SKTexture(imageNamed: "sliceLifeGone")
         }
+        
+        // Challenge 3:
+        gameOverLabel = SKLabelNode(fontNamed: "Chalkduster")
+        gameOverLabel.fontSize = 56
+        gameOverLabel.horizontalAlignmentMode = .center
+        gameOverLabel.verticalAlignmentMode = .center
+        gameOverLabel.text = "Game over!"
+        gameOverLabel.zPosition = 4
+        gameOverLabel.position = CGPoint(x: 512, y: 384)
+        addChild(gameOverLabel)
     }
 }
